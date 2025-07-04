@@ -135,6 +135,11 @@ with pushd("build"):
         print("  * building")
         subprocess.run(["autoninja", "-C", f"out/{config}", "libEGL", "libGLESv2"], shell=shell, check=True)
 
+    # on macOS, change install name to rpath
+    if platform.system() == "Darwin":
+        subprocess.run(['install_name_tool', '-id', '@rpath/libEGL.dylib', f'angle/out/{config}/libEGL.dylib'], check=True)
+        subprocess.run(['install_name_tool', '-id', '@rpath/libGLESv2.dylib', f'angle/out/{config}/libGLESv2.dylib'], check=True)
+
     # package result
     print("  * copying build artifacts...")
 
