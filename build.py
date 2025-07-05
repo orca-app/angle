@@ -5,6 +5,7 @@ import platform
 import shutil
 import subprocess
 from contextlib import contextmanager
+from pathlib import Path
 
 def onerror(func, path, exc_info):
     """
@@ -37,6 +38,17 @@ def pushd(new_dir):
         yield
     finally:
         os.chdir(previous_dir)
+
+def fixup_line_endings(file_path):
+    file_data = ""
+
+    with open(file_path, 'rb') as file:
+        file_data = file.read()
+        
+    file_data = file_data.replace(b'\r\n',  b'\n')
+
+    with open(file_path, 'wb') as file:
+        file.write(file_data)
 
 ##### main:
 
@@ -144,15 +156,36 @@ with pushd("build"):
     print("  * copying build artifacts...")
 
     yeetdir("angle.out")
-    os.makedirs("angle.out/include", exist_ok=True)
+    os.makedirs("angle.out/include/KHR", exist_ok=True)
+    os.makedirs("angle.out/include/EGL", exist_ok=True)
+    os.makedirs("angle.out/include/GLES", exist_ok=True)
+    os.makedirs("angle.out/include/GLES2", exist_ok=True)
+    os.makedirs("angle.out/include/GLES3", exist_ok=True)
     os.makedirs("angle.out/lib", exist_ok=True)
 
     # - includes
-    shutil.copytree("angle/include/KHR", "angle.out/include/KHR", dirs_exist_ok=True)
-    shutil.copytree("angle/include/EGL", "angle.out/include/EGL", dirs_exist_ok=True)
-    shutil.copytree("angle/include/GLES", "angle.out/include/GLES", dirs_exist_ok=True)
-    shutil.copytree("angle/include/GLES2", "angle.out/include/GLES2", dirs_exist_ok=True)
-    shutil.copytree("angle/include/GLES3", "angle.out/include/GLES3", dirs_exist_ok=True)
+    # these are explicitly listed to avoid copying non-header files
+    shutil.copy(f"angle/include/KHR/khrplatform.h", "angle.out/include/KHR/")
+
+    shutil.copy(f"angle/include/EGL/egl.h", "angle.out/include/EGL/")
+    shutil.copy(f"angle/include/EGL/eglext.h", "angle.out/include/EGL/")
+    shutil.copy(f"angle/include/EGL/eglext_angle.h", "angle.out/include/EGL/")
+    shutil.copy(f"angle/include/EGL/eglplatform.h", "angle.out/include/EGL/")
+
+    shutil.copy(f"angle/include/GLES/egl.h", "angle.out/include/GLES/")
+    shutil.copy(f"angle/include/GLES/gl.h", "angle.out/include/GLES/")
+    shutil.copy(f"angle/include/GLES/glext.h", "angle.out/include/GLES/")
+    shutil.copy(f"angle/include/GLES/glplatform.h", "angle.out/include/GLES/")
+
+    shutil.copy(f"angle/include/GLES2/gl2.h", "angle.out/include/GLES2/")
+    shutil.copy(f"angle/include/GLES2/gl2ext.h", "angle.out/include/GLES2/")
+    shutil.copy(f"angle/include/GLES2/gl2ext_angle.h", "angle.out/include/GLES2/")
+    shutil.copy(f"angle/include/GLES2/gl2platform.h", "angle.out/include/GLES2/")
+
+    shutil.copy(f"angle/include/GLES3/gl3.h", "angle.out/include/GLES3/")
+    shutil.copy(f"angle/include/GLES3/gl31.h", "angle.out/include/GLES3/")
+    shutil.copy(f"angle/include/GLES3/gl32.h", "angle.out/include/GLES3/")
+    shutil.copy(f"angle/include/GLES3/gl3platform.h", "angle.out/include/GLES3/")
 
     # - libs
     if platform.system() == "Windows":
@@ -168,3 +201,9 @@ with pushd("build"):
     else:
         shutil.copy(f"angle/out/{config}/libEGL.dylib", "angle.out/lib")
         shutil.copy(f"angle/out/{config}/libGLESv2.dylib", "angle.out/lib")
+
+    # ensure line endings are consistent between windows/unix systems since they
+    # will be used in the Orca project
+    pathlist = Path("angle.out/include").glob('**/*.h')
+    for path in pathlist:
+        fixup_line_endings(str(path))
