@@ -44,7 +44,7 @@ def fixup_line_endings(file_path):
 
     with open(file_path, 'rb') as file:
         file_data = file.read()
-        
+
     file_data = file_data.replace(b'\r\n',  b'\n')
 
     with open(file_path, 'wb') as file:
@@ -147,10 +147,10 @@ with pushd("build"):
         print("  * building")
         subprocess.run(["autoninja", "-C", f"out/{config}", "libEGL", "libGLESv2"], shell=shell, check=True)
 
-    # on macOS, change install name to rpath
+    # on macOS, change install name to executable path
     if platform.system() == "Darwin":
-        subprocess.run(['install_name_tool', '-id', '@rpath/libEGL.dylib', f'angle/out/{config}/libEGL.dylib'], check=True)
-        subprocess.run(['install_name_tool', '-id', '@rpath/libGLESv2.dylib', f'angle/out/{config}/libGLESv2.dylib'], check=True)
+        subprocess.run(['install_name_tool', '-id', '@executable_path/libEGL.dylib', f'angle/out/{config}/libEGL.dylib'], check=True)
+        subprocess.run(['install_name_tool', '-id', '@executable_path/libGLESv2.dylib', f'angle/out/{config}/libGLESv2.dylib'], check=True)
 
     # package result
     print("  * copying build artifacts...")
